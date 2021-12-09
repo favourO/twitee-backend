@@ -5,6 +5,10 @@ const errorHandler = require('./middleware/error');
 const colors = require('colors');
 const morgan = require('morgan');
 const cors = require('cors');
+const helmet = require('helmet');
+const xss = require('xss-clean');
+const hpp = require('hpp');
+const sanitize = require('express-mongo-sanitize');
 
 
 // Load express
@@ -17,11 +21,25 @@ app.use(cors());
 app.use(express.json({ extended: true}));
 app.use(express.urlencoded({ extended: true}));
 
+app.use(express.static('public'));  
+
 // load environment variables using dotenv
 dotenv.config({ path: './config/config.env'});
 
 // Connect to Database
 connectDB();
+
+// Santize data
+app.use(sanitize());
+
+
+// Set security headers
+app.use(helmet());
+
+// Prevent cross site scripting
+app.use(xss());
+
+
 
 
 // Load Route files
@@ -30,10 +48,8 @@ const twitRoutes = require('./routes/twitRoutes');
 const commentRoutes = require('./routes/commentRoutes');
 
 
-// Middleware logging during development
-if (process.env.NODE_ENV === 'development') {
-    app.use(morgan('dev'));
-}
+
+
 
 // Mount Route files
 app.use('/api/twitee/auth', authRoutes);
@@ -58,3 +74,5 @@ process.on('unhandledRejection', (err, promise) => {
     // Close the server and exit process
     server.close(() => process.exit(1));
 })
+;
+module.exports = server
